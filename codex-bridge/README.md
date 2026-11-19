@@ -57,9 +57,12 @@ In a fresh Dossier the Compose environment selects the bridge. **Previously save
 - The runner uses stdin and an argument array (no shell), a temporary working directory, read-only Codex sandboxing, no user config/rules, and disabled shell, patch and web-search features. The container mounts no host workspace or Docker socket. These reduce agent capabilities; this is still an agent process, not a pure inference API.
 - Request size is limited to 2 MiB; streaming and tool calls are rejected. Cancellation and the five-minute timeout stop the CLI. Supported reasoning efforts are low, medium and high. Temperature and max-token fields are not enforced by this CLI adapter; Dossier's output validation still detects invalid results. Token usage is recorded when the CLI reports it.
 - Profile and posting content goes to the model service used by Codex. Temporary files are removed after each request. The CLI credential volume is sensitive; keep it private. Dossier's application data and backups remain in its existing volumes.
+- Dossier 1.15.1 labels private OpenAI-compatible endpoints as "Nothing leaves this computer". That label describes the bridge's address, not its downstream processing, and is inaccurate for this integration: Codex sends the supplied content to OpenAI. Do not treat this bridge as an offline model.
 - Back up Dossier using Settings → Data and backups → Export. Do not use `docker compose down -v` unless you intend to erase volumes. Stopping the stack preserves data.
 
 ## Verification
+
+The bridge pins Codex CLI 0.170.0. The older 0.141.0 Windows runtime could sign in but its inference request disconnected; an isolated 0.170.0 installation successfully completed a request with the existing ChatGPT sign-in. The bridge disables plugins, apps, hooks, browser/computer tools and subagents for each run in addition to shell execution. For native Windows use, set `CODEX_BRIDGE_COMMAND` to the full path of the official `codex.exe` executable, rather than the PowerShell/npm command shim. This does not change the user's normal Codex installation or settings.
 
 No application dependency installation is needed for the bridge tests (Node 24+):
 
@@ -67,4 +70,6 @@ No application dependency installation is needed for the bridge tests (Node 24+)
 node --test codex-bridge/bridge.test.mjs
 ```
 
-These test authentication, request validation, schema forwarding, OpenAI response/usage conversion, cancellation, concurrency, error redaction, CLI arguments and temporary-file cleanup with a fake CLI process. They do not prove model entitlement, PDF quality or successful Docker deployment. Those require a real signed-in runtime and a running Dossier instance. Docker builds and a complete application/PDF run must be checked on the target machine before relying on the integration.
+These test authentication, request validation, schema forwarding, OpenAI response/usage conversion, cancellation, concurrency, error redaction, CLI arguments and temporary-file cleanup with a fake CLI process. Linux CI also builds the bridge image and verifies its packaged CLI. Each deployment still requires model authentication and a real generation check.
+
+Local integration verification on 19 November 2026: Dossier 1.15.1 ran in Docker Desktop with SQLite and a native Windows bridge using the official Codex CLI 0.170.0 and existing ChatGPT sign-in. Verified authenticated model listing from inside the Dossier container, a real text completion, vacancy extraction and matching, tailored resume/letter generation on the bundled Jane Doe demo profile, and PDF export. The demo test used a separate container/database; the main instance remained empty. Both PDF layouts were rendered for visual inspection. This verifies the Windows/Docker-host arrangement, not authentication or sandbox behaviour on a different Linux host.

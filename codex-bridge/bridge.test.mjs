@@ -104,6 +104,9 @@ test('runner uses stdin, no shell, an isolated directory, schema and cleanup', a
       assert.ok(!args.join(' ').includes(injection));
       assert.ok(args.includes('--ephemeral'));
       assert.ok(args.includes('--ignore-user-config'));
+      for (const feature of ['plugins', 'apps', 'hooks', 'shell_tool', 'browser_use', 'computer_use', 'multi_agent']) {
+        assert.ok(args.some((arg, i) => arg === '--disable' && args[i + 1] === feature));
+      }
       assert.ok(args.includes('--output-schema'));
       assert.ok(args.includes('read-only'));
       await writeFile(args[args.indexOf('--output-last-message') + 1], '{"summary":"OK"}');

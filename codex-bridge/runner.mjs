@@ -4,13 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 /** A fresh, ephemeral CLI run per completion. Never interpolate profile data into a shell. */
-export async function runCodex(request, { signal, command = 'codex', spawnProcess = spawn } = {}) {
+export async function runCodex(request, { signal, command = process.env.CODEX_BRIDGE_COMMAND || 'codex', spawnProcess = spawn } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'dossier-codex-'));
   try {
     const output = join(dir, 'answer.txt');
     const args = ['exec', '--ignore-user-config', '--ignore-rules', '--ephemeral',
       '--skip-git-repo-check', '--sandbox', 'read-only', '--color', 'never', '--json',
-      '-c', 'features.shell_tool=false', '-c', 'features.apply_patch_freeform=false',
+      '--disable', 'shell_tool', '--disable', 'unified_exec', '--disable', 'plugins',
+      '--disable', 'apps', '--disable', 'hooks', '--disable', 'browser_use',
+      '--disable', 'computer_use', '--disable', 'image_generation', '--disable', 'multi_agent',
       '-c', 'web_search="disabled"', '--output-last-message', output];
     // The server chooses the model; the HTTP caller cannot choose executables or configuration.
     if (request.model !== 'codex-default') args.push('--model', request.model);

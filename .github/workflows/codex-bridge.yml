@@ -24,4 +24,6 @@ jobs:
           DOSSIER_SECRET: validation-only-placeholder-at-least-32-chars
           CODEX_BRIDGE_TOKEN: validation-only-placeholder-at-least-32-chars
       - name: Build the bridge image
-        run: docker compose -f compose.production.yml -f compose.codex.yml build codex-bridge
+        run: docker build -t dossier-codex-bridge:test codex-bridge
+      - name: Verify the packaged Codex runtime
+        run: docker run --rm dossier-codex-bridge:test codex --version

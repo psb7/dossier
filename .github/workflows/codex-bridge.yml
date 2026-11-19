@@ -1,0 +1,27 @@
+name: Codex bridge
+on:
+  push:
+    branches: [feat/codex-provider]
+    paths: [codex-bridge/**, compose.codex.yml, .github/workflows/codex-bridge.yml]
+  pull_request:
+    paths: [codex-bridge/**, compose.codex.yml, .github/workflows/codex-bridge.yml]
+permissions:
+  contents: read
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test codex-bridge/bridge.test.mjs
+      - name: Validate deployment configuration
+        run: docker compose -f compose.production.yml -f compose.codex.yml config --quiet
+        env:
+          POSTGRES_PASSWORD: validation-only-placeholder
+          DOSSIER_PASSWORD: argon2id:validation-only-placeholder
+          DOSSIER_SECRET: validation-only-placeholder-at-least-32-chars
+          CODEX_BRIDGE_TOKEN: validation-only-placeholder-at-least-32-chars
+      - name: Build the bridge image
+        run: docker compose -f compose.production.yml -f compose.codex.yml build codex-bridge

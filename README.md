@@ -4,6 +4,8 @@
 
 <h1 align="center">Dossier</h1>
 
+> Fork addition (19 November 2026): [Codex bridge and private Linux/Tailscale installation](codex-bridge/README.md). Use Dossier's Generate buttons with the official Codex CLI through its existing OpenAI-compatible provider. This optional component is under the repository's AGPL-3.0 license.
+
 <p align="center">
   Your job search, on your own server: one profile, a tailored resume and cover letter for every job, and every application tracked from draft to offer.
 </p>

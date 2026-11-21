@@ -1,0 +1,40 @@
+name: Codex bridge
+on:
+  push:
+    branches: [feat/codex-provider]
+    paths: [codex-bridge/**, instance-image/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
+  pull_request:
+    paths: [codex-bridge/**, instance-image/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
+permissions:
+  contents: read
+jobs:
+  bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test codex-bridge/bridge.test.mjs instance-image/namespace-cookies.test.mjs
+      - name: Validate deployment configuration
+        run: docker compose -f compose.production.yml -f compose.codex.yml config --quiet
+        env:
+          POSTGRES_PASSWORD: validation-only-placeholder
+          DOSSIER_PASSWORD: argon2id:validation-only-placeholder
+          DOSSIER_SECRET: validation-only-placeholder-at-least-32-chars
+          CODEX_BRIDGE_TOKEN: validation-only-placeholder-at-least-32-chars
+      - name: Build the bridge image
+        run: docker build -t dossier-codex-bridge:test codex-bridge
+      - name: Verify the packaged Codex runtime
+        run: docker run --rm dossier-codex-bridge:test codex --version
+      - name: Verify the TLS trust store
+        run: docker run --rm dossier-codex-bridge:test sh -c 'test -s /etc/ssl/certs/ca-certificates.crt'
+      - name: Build the isolated-login instance image
+        run: docker build -t dossier-instance:test --build-arg COOKIE_NAMESPACE=ci instance-image
+      - name: Validate the private SQLite deployment
+        run: docker compose -p dossier -f compose.home.yml config --quiet
+        env:
+          DOSSIER_PASSWORD: argon2id:validation-only-placeholder
+          DOSSIER_SECRET: validation-only-placeholder-at-least-32-chars
+          CODEX_BRIDGE_TOKEN: validation-only-placeholder-at-least-32-chars
+          DOSSIER_PUBLIC_URL: https://example.ts.net:8443

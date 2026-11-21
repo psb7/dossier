@@ -1,0 +1,30 @@
+# Layer over compose.production.yml. Only app:3000 is published on the host.
+services:
+  app:
+    environment:
+      DOSSIER_AI_PROVIDER: openai
+      DOSSIER_AI_URL: http://codex-bridge:8787/v1
+      DOSSIER_AI_MODEL: ${CODEX_BRIDGE_MODEL:-codex-default}
+      DOSSIER_AI_KEY: ${CODEX_BRIDGE_TOKEN:?Set a random bridge token in .env}
+      DOSSIER_AI_TIMEOUT_SECONDS: 360
+    depends_on:
+      codex-bridge:
+        condition: service_started
+  codex-bridge:
+    build: ./codex-bridge
+    restart: unless-stopped
+    environment:
+      CODEX_BRIDGE_TOKEN: ${CODEX_BRIDGE_TOKEN:?Set a random bridge token in .env}
+      CODEX_BRIDGE_MODELS: ${CODEX_BRIDGE_MODEL:-codex-default}
+      CODEX_BRIDGE_TIMEOUT_SECONDS: 300
+    volumes:
+      - codex-state:/home/node/.codex
+    # Never expose the bridge port, Docker socket or host directories.
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,size=128m,mode=1777
+    mem_limit: 768m
+volumes:
+  codex-state:

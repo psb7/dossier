@@ -2,7 +2,7 @@
 # the Windows local installation, so its data volume can be migrated intact.
 services:
   app:
-    image: ghcr.io/aientech/dossier:v1.15.1
+    image: ${DOSSIER_IMAGE:-ghcr.io/aientech/dossier:v1.15.1}
     restart: unless-stopped
     depends_on:
       codex-bridge:

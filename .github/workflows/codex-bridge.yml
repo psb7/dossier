@@ -2,9 +2,9 @@ name: Codex bridge
 on:
   push:
     branches: [feat/codex-provider]
-    paths: [codex-bridge/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
+    paths: [codex-bridge/**, instance-image/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
   pull_request:
-    paths: [codex-bridge/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
+    paths: [codex-bridge/**, instance-image/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
 permissions:
   contents: read
 jobs:
@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node --test codex-bridge/bridge.test.mjs
+      - run: node --test codex-bridge/bridge.test.mjs instance-image/namespace-cookies.test.mjs
       - name: Validate deployment configuration
         run: docker compose -f compose.production.yml -f compose.codex.yml config --quiet
         env:
@@ -29,6 +29,8 @@ jobs:
         run: docker run --rm dossier-codex-bridge:test codex --version
       - name: Verify the TLS trust store
         run: docker run --rm dossier-codex-bridge:test sh -c 'test -s /etc/ssl/certs/ca-certificates.crt'
+      - name: Build the isolated-login instance image
+        run: docker build -t dossier-instance:test --build-arg COOKIE_NAMESPACE=ci instance-image
       - name: Validate the private SQLite deployment
         run: docker compose -p dossier -f compose.home.yml config --quiet
         env:

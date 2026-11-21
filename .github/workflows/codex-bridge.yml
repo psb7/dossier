@@ -2,9 +2,9 @@ name: Codex bridge
 on:
   push:
     branches: [feat/codex-provider]
-    paths: [codex-bridge/**, compose.codex.yml, .github/workflows/codex-bridge.yml]
+    paths: [codex-bridge/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
   pull_request:
-    paths: [codex-bridge/**, compose.codex.yml, .github/workflows/codex-bridge.yml]
+    paths: [codex-bridge/**, compose.codex.yml, compose.home.yml, .github/workflows/codex-bridge.yml]
 permissions:
   contents: read
 jobs:
@@ -27,3 +27,12 @@ jobs:
         run: docker build -t dossier-codex-bridge:test codex-bridge
       - name: Verify the packaged Codex runtime
         run: docker run --rm dossier-codex-bridge:test codex --version
+      - name: Verify the TLS trust store
+        run: docker run --rm dossier-codex-bridge:test sh -c 'test -s /etc/ssl/certs/ca-certificates.crt'
+      - name: Validate the private SQLite deployment
+        run: docker compose -p dossier -f compose.home.yml config --quiet
+        env:
+          DOSSIER_PASSWORD: argon2id:validation-only-placeholder
+          DOSSIER_SECRET: validation-only-placeholder-at-least-32-chars
+          CODEX_BRIDGE_TOKEN: validation-only-placeholder-at-least-32-chars
+          DOSSIER_PUBLIC_URL: https://example.ts.net:8443

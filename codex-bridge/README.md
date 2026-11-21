@@ -14,6 +14,18 @@ This is a personal, single-user integration, not a hosted multi-user service. It
 
 ## Install privately
 
+For a single-user home server that keeps an existing SQLite database, use `compose.home.yml` instead of the PostgreSQL stack below. Put `DOSSIER_PASSWORD` (the password hash), `DOSSIER_SECRET`, `CODEX_BRIDGE_TOKEN`, `DOSSIER_PUBLIC_URL` and optionally `TZ` in the private `.env` file. Keep the existing secret when migrating encrypted settings. With project name `dossier`, the data volume is `dossier_data` and the Codex state volume is `dossier_codex-state`.
+
+```bash
+docker compose -p dossier -f compose.home.yml build
+docker compose -p dossier -f compose.home.yml run --rm codex-bridge codex login --device-auth
+docker compose -p dossier -f compose.home.yml up -d
+```
+
+Complete the official device sign-in in your own browser. If your Tailscale HTTPS root is already used by another application, give Dossier a separate private HTTPS port, for example `sudo tailscale serve --bg --https=8443 http://127.0.0.1:3000`, and set `DOSSIER_PUBLIC_URL` to that HTTPS address with `:8443`. The app remains bound to loopback. Its source and bridge retain the AGPL-3.0 license.
+
+The bridge image includes `ca-certificates`: the native Linux Codex binary needs the system TLS trust store to sign in and make model requests. Node's bundled trust store alone is insufficient. TLS certificate verification remains enabled.
+
 Clone the fork's feature branch on the Linux machine:
 
 ```bash

@@ -1,0 +1,45 @@
+# Private single-user deployment with SQLite. Uses the same database format as
+# the Windows local installation, so its data volume can be migrated intact.
+services:
+  app:
+    image: ghcr.io/aientech/dossier:v1.15.1
+    restart: unless-stopped
+    depends_on:
+      codex-bridge:
+        condition: service_started
+    environment:
+      DATABASE_URL: file:/data/dossier.db
+      DOSSIER_PASSWORD: ${DOSSIER_PASSWORD:?Set the Dossier password hash in .env}
+      DOSSIER_SECRET: ${DOSSIER_SECRET:?Set DOSSIER_SECRET in .env}
+      DOSSIER_AI_PROVIDER: openai
+      DOSSIER_AI_URL: http://codex-bridge:8787/v1
+      DOSSIER_AI_MODEL: ${CODEX_BRIDGE_MODEL:-codex-default}
+      DOSSIER_AI_KEY: ${CODEX_BRIDGE_TOKEN:?Set a random bridge token in .env}
+      DOSSIER_AI_TIMEOUT_SECONDS: 360
+      DOSSIER_PUBLIC_URL: ${DOSSIER_PUBLIC_URL:?Set the private HTTPS URL in .env}
+      DOSSIER_TELEMETRY: off
+      TZ: ${TZ:-Europe/Berlin}
+    ports:
+      - "127.0.0.1:${DOSSIER_PORT:-3000}:3000"
+    volumes:
+      - data:/data
+    mem_limit: 1g
+  codex-bridge:
+    image: dossier-codex-bridge:latest
+    build: ./codex-bridge
+    restart: unless-stopped
+    environment:
+      CODEX_BRIDGE_TOKEN: ${CODEX_BRIDGE_TOKEN:?Set a random bridge token in .env}
+      CODEX_BRIDGE_MODELS: ${CODEX_BRIDGE_MODEL:-codex-default}
+      CODEX_BRIDGE_TIMEOUT_SECONDS: 300
+    volumes:
+      - codex-state:/home/node/.codex
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,size=128m,mode=1777
+    mem_limit: 768m
+volumes:
+  data:
+  codex-state:

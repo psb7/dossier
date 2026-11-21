@@ -1,5 +1,7 @@
 FROM node:24-bookworm-slim
 ARG CODEX_VERSION=0.170.0
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 RUN npm install --global @openai/codex@${CODEX_VERSION} \
     && mkdir -p /home/node/.codex && chown node:node /home/node/.codex
 WORKDIR /bridge
